@@ -3,24 +3,25 @@
 namespace App\Http\Controllers;
 
 use App\Models\Url;
+use App\Rules\UniqueUserUrl;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Validation\ValidationException;
 
 class UrlController extends Controller
 {
     /**
      * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(): Response
     {
-        //
+        return Inertia::render('Dashboard');
     }
 
     /**
      * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
      */
     public function create()
     {
@@ -29,20 +30,33 @@ class UrlController extends Controller
 
     /**
      * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
-        //
+
+        // dd($request->all());
+        $validated = $request->validate([
+            'url' => ['required', 'url', new UniqueUserUrl],
+        ]);
+
+        // revisar si la url ya existe
+        // $url = $request->user()->urls()->firstWhere('url', $validated['url']);
+
+        // if ($url) {
+        //     throw ValidationException::withMessages(['url' => 'URL already exists.']);
+        // }
+
+        // generando el short_url
+        $validated['short_url'] = substr(md5($request->user()->id . $validated['url']), 0, 5);
+
+        // guardar la url en la base de datos
+        $request->user()->urls()->create($validated);
+
+        return redirect()->route('dashboard');
     }
 
     /**
      * Display the specified resource.
-     *
-     * @param  \App\Models\Url  $url
-     * @return \Illuminate\Http\Response
      */
     public function show(Url $url)
     {
@@ -51,9 +65,6 @@ class UrlController extends Controller
 
     /**
      * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\Url  $url
-     * @return \Illuminate\Http\Response
      */
     public function edit(Url $url)
     {
@@ -62,10 +73,6 @@ class UrlController extends Controller
 
     /**
      * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Url  $url
-     * @return \Illuminate\Http\Response
      */
     public function update(Request $request, Url $url)
     {
@@ -74,9 +81,6 @@ class UrlController extends Controller
 
     /**
      * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\Url  $url
-     * @return \Illuminate\Http\Response
      */
     public function destroy(Url $url)
     {
